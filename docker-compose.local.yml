@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  soketi:
+    image: quay.io/soketi/soketi:1.4-16-debian
+    restart: unless-stopped
+    environment:
+      SOKETI_DEBUG: ${APP_DEBUG}
+      SOKETI_METRICS_ENABLED: ${METRICS_ENABLED}
+      SOKETI_APP_MANAGER_DRIVER: ${APP_MANAGER_DRIVER}
+      SOKETI_APP_MANAGER_MYSQL_USE_V2: true
+      SOKETI_DB_MYSQL_HOST: ${DB_HOST}
+      SOKETI_DB_MYSQL_PORT: ${DB_PORT}
+      SOKETI_DB_MYSQL_DATABASE: ${DB_DATABASE}
+      SOKETI_DB_MYSQL_USERNAME: ${DB_USERNAME}
+      SOKETI_DB_MYSQL_PASSWORD: ${DB_PASSWORD}
+      SOKETI_ADAPTER_DRIVER: ${ADAPTER_DRIVER}
+      SOKETI_CACHE_DRIVER: ${CACHE_DRIVER}
+      SOKETI_DB_REDIS_HOST: ${REDIS_HOST}
+      SOKETI_DB_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SOKETI_DB_REDIS_PORT: ${REDIS_PORT}
+    ports:
+      - '${APP_PORT}:6001'
+      - '${METRICS_SERVER_PORT}:9601'
+
+  db:
+    build:
+      context: docker/mysql
+    restart: unless-stopped
+    volumes:
+      - db-data-dev:/var/lib/mysql
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: 1
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+
+  redis:
+    build:
+      context: docker/redis
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: ${DB_PORT}
+      PMA_USER: ${DB_USERNAME}
+      PMA_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - '${PMA_PORT:-6003}:80'
+
+volumes:
+  db-data-dev:
+    driver: local
